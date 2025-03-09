@@ -1,4 +1,4 @@
-import PageIllustration from "@/components/page-illustration";
+import NotificationPoller from "@/app/components/NotificationPoller";
 
 export default function AuthLayout({
   children,
@@ -6,10 +6,9 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="relative flex grow flex-col">
-      <PageIllustration multiple />
-
-      {children}
-    </main>
+    <div className="flex min-h-screen flex-col">
+      <NotificationPoller />
+      <main className="flex-1">{children}</main>
+    </div>
   );
 }

@@ -1,0 +1,24 @@
+
+/* Define dark theme styles */
+[data-theme="dark"] {
+  --color-background: #1a202c;
+  --color-text: #f7fafc;
+  --color-primary: #2d3748;
+  --color-secondary: #4a5568;
+  --color-accent: #718096;
+}
+
+/* Define light theme styles */
+[data-theme="light"] {
+  --color-background: #f7fafc;
+  --color-text: #1a202c;
+  --color-primary: #edf2f7;
+  --color-secondary: #e2e8f0;
+  --color-accent: #cbd5e0;
+}
+
+/* Apply theme styles */
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+}

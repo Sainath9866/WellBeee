@@ -1,6 +1,8 @@
+
 "use client";
 
 import { useEffect } from "react";
+import { AuthProvider } from '../providers';
 
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -23,9 +25,10 @@ export default function DefaultLayout({
 
   return (
     <>
-      <main className="relative flex grow flex-col">{children}</main>
-
-      <Footer />
+      <AuthProvider>
+        <main className="relative flex grow flex-col">{children}</main>
+        <Footer />
+      </AuthProvider>
     </>
   );
 }
