@@ -1,46 +1,53 @@
-import { getSession } from 'next-auth/react';
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
 import User from '@/models/User';
-import clientPromise from '../../../lib/mongodb';
+import dbConnect from '@/app/lib/mongodb';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 interface UpdateProfileBody {
     age: number;
     gender: string;
 }
 
-interface SessionUser {
-    email: string;
-}
-
-interface Session {
-    user: SessionUser;
-}
-
-export default async function handler(
-    req: { body: UpdateProfileBody },
-    res: {
-        status: (code: number) => {
-            json: (data: { message: string; error?: any }) => void;
-        };
-    }
-) {
-    let session: Session | null = null;
-
+export async function PUT(request: Request) {
     try {
-        session = await getSession({ req }) as Session | null;
-    } catch (error) {
-        console.error('Error fetching session:', error);
-        return res.status(500).json({ message: 'Internal server error', error });
-    }
+        const session = await getServerSession(authOptions);
+        
+        if (!session?.user?.email) {
+            return NextResponse.json(
+                { message: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
 
-    if (!session) {
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
-        await db.collection('users').updateOne(
+        await dbConnect();
+        const { age, gender } = await request.json() as UpdateProfileBody;
+
+        const user = await User.findOneAndUpdate(
             { email: session.user.email },
-            { $set: { age, gender } }
+            { $set: { age, gender } },
+            { new: true }
         );
-        res.status(200).json({ message: 'Profile updated successfully' });
+
+        if (!user) {
+            return NextResponse.json(
+                { message: 'User not found' },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json(
+            { message: 'Profile updated successfully' },
+            { status: 200 }
+        );
     } catch (error) {
-        res.status(500).json({ message: 'Profile update failed', error });
+        console.error('Error updating profile:', error);
+        return NextResponse.json(
+            { 
+                message: 'Profile update failed',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            },
+            { status: 500 }
+        );
     }
 }
