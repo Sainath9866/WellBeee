@@ -28,7 +28,26 @@ export async function POST(request: Request) {
   try {
     await dbConnect();
     const body = await request.json();
-    const { doctorId, date, timeSlot } = body;
+    const { doctorId, date, timeSlot, type } = body;
+
+    // Get user from session
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: session.user.email });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Add patientId to the appointment data
+    const appointmentData = {
+      ...body,
+      patientId: user._id,
+      status: 'scheduled'
+    };
 
     // Fetch doctor's availability
     const doctor = await Doctor.findById(doctorId);
@@ -48,7 +67,7 @@ export async function POST(request: Request) {
     // Check working hours
     const appointmentStart = timeSlot.start;
     const appointmentEnd = timeSlot.end;
-    if (appointmentStart < doctor.workingHours.start || appointmentEnd > doctor.workingHours.end) {
+    if (!doctor.workingHours || appointmentStart < doctor.workingHours.start || appointmentEnd > doctor.workingHours.end) {
       return NextResponse.json({ 
         error: 'Appointment time is outside doctor\'s working hours',
         workingHours: doctor.workingHours 
@@ -70,8 +89,33 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
+    // For video appointments, generate a fallback meeting URL if needed
+    if (type === 'video') {
+      // Generate a unique room name based on timestamp and random string
+      const roomId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+      
+      // Use Jitsi Meet as fallback (works across browsers without authentication)
+      appointmentData.meetingLink = `https://meet.jit.si/wellbee-${roomId}#config.prejoinPageEnabled=false`;
+    }
+
     // Create the appointment
-    const appointment = await Appointment.create(body);
+    const appointment = await Appointment.create(appointmentData);
+
+    // Create notification for the doctor
+    try {
+      await Notification.create({
+        userId: doctor._id,
+        fromUser: user._id,
+        type: 'appointment',
+        message: `New appointment scheduled with ${user.name} on ${new Date(date).toLocaleDateString()} at ${timeSlot.start}`,
+        read: false,
+        createdAt: new Date()
+      });
+    } catch (notifError) {
+      // Log but don't fail if notification creation fails
+      console.error('Error creating notification:', notifError);
+    }
+
     return NextResponse.json(appointment);
   } catch (error) {
     console.error('Error creating appointment:', error);

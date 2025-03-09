@@ -3,12 +3,22 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/app/lib/mongodb';
 import User from '@/models/User';
-import mongoose from 'mongoose';
+import mongoose, { Model } from 'mongoose';
+
+// Define interface for exercise record
+interface IExerciseRecord {
+  userId: mongoose.Types.ObjectId;
+  date: Date;
+  exerciseType: string;
+  duration: number;
+  caloriesBurned: number;
+  notes?: string;
+}
 
 // Define a schema for exercise records if it doesn't exist
-let ExerciseRecord;
+let ExerciseRecord: Model<IExerciseRecord>;
 try {
-  ExerciseRecord = mongoose.model('ExerciseRecord');
+  ExerciseRecord = mongoose.model<IExerciseRecord>('ExerciseRecord');
 } catch {
   const ExerciseRecordSchema = new mongoose.Schema({
     userId: {
@@ -37,13 +47,13 @@ try {
     }
   }, { timestamps: true });
 
-  ExerciseRecord = mongoose.model('ExerciseRecord', ExerciseRecordSchema);
+  ExerciseRecord = mongoose.model<IExerciseRecord>('ExerciseRecord', ExerciseRecordSchema);
 }
 
 // GET a specific exercise record
 export async function GET(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -55,7 +65,7 @@ export async function GET(
     }
 
     await dbConnect();
-    const { id } = context.params;
+    const { id } = params;
 
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -98,7 +108,7 @@ export async function GET(
 // UPDATE a specific exercise record
 export async function PUT(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -110,7 +120,7 @@ export async function PUT(
     }
 
     await dbConnect();
-    const { id } = context.params;
+    const { id } = params;
 
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -164,7 +174,7 @@ export async function PUT(
 // DELETE a specific exercise record
 export async function DELETE(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -176,7 +186,7 @@ export async function DELETE(
     }
 
     await dbConnect();
-    const { id } = context.params;
+    const { id } = params;
 
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {

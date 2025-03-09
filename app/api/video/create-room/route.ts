@@ -28,13 +28,13 @@ const verifyToken = (token: string): DecodedToken | null => {
 const DAILY_API_KEY = process.env.DAILY_API_KEY;
 const DAILY_API_URL = 'https://api.daily.co/v1';
 
-// Function to generate a random meeting URL if Daily.co is not configured
+// Function to generate a fallback meeting URL if Daily.co is not configured
 const generateFallbackMeetingUrl = (appointmentId: string) => {
   // Generate a unique room name based on appointment ID
   const roomName = `appointment-${appointmentId}`;
   
   // Use Jitsi Meet as fallback (works across browsers without authentication)
-  return `https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false&config.startWithVideoMuted=false&config.startWithAudioMuted=false`;
+  return `https://meet.jit.si/wellbee-${roomName}#config.prejoinPageEnabled=false&config.startWithVideoMuted=false&config.startWithAudioMuted=false`;
 };
 
 export async function POST(request: Request) {
@@ -123,18 +123,23 @@ export async function POST(request: Request) {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to create Daily.co room');
+          const errorData = await response.json();
+          console.error('Daily API error:', errorData);
+          throw new Error(`Failed to create Daily.co room: ${response.status} ${response.statusText}`);
         }
 
         const room = await response.json();
         meetingLink = room.url;
+        console.log('Successfully created Daily.co room:', meetingLink);
       } catch (error) {
         console.error('Error creating Daily.co room:', error);
         // Fall back to alternative meeting URL
         meetingLink = generateFallbackMeetingUrl(appointmentId);
+        console.log('Using fallback meeting URL:', meetingLink);
       }
     } else {
       // Use fallback meeting URL if Daily.co is not configured
+      console.log('Daily API key not configured, using fallback meeting URL');
       meetingLink = generateFallbackMeetingUrl(appointmentId);
     }
 

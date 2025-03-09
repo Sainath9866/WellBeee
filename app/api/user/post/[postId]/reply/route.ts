@@ -9,7 +9,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ postId: string }> }
+  { params }: { params: { postId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,6 @@ export async function POST(
     }
 
     await dbConnect();
-    const params = await context.params;
     const { postId } = params;
 
     // Validate postId format
