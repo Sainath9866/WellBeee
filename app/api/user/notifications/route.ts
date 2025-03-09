@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import Notification from '@/models/Notification';
 import User from '@/models/User';
 import dbConnect from '@/app/lib/mongodb';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 // Import Post model or create a fallback if it doesn't exist
 let Post;

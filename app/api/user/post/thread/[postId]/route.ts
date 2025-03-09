@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import Post from '@/models/Post';
 import dbConnect from '@/app/lib/mongodb';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import mongoose from 'mongoose';
 
 export async function GET(

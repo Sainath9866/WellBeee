@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import User from '@/models/User';
+import { authOptions } from '@/lib/auth';
 import dbConnect from '@/app/lib/mongodb';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 interface UpdateProfileBody {
     age: number;

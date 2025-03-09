@@ -1,53 +1,11 @@
 import { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-import bcrypt from 'bcryptjs';
-import dbConnect from './mongodb';
+import dbConnect from '../../lib/mongodb';
 import User from '@/models/User';
 
-declare module "next-auth" {
-  interface User {
-    role?: string;
-  }
-}
-
+// Exporting authOptions for use with getServerSession
 export const authOptions: NextAuthOptions = {
   providers: [
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'text' },
-        password: { label: 'Password', type: 'password' }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Invalid credentials');
-        }
-
-        await dbConnect();
-
-        // Find user by email
-        const user = await User.findOne({ email: credentials.email });
-
-        if (!user) {
-          throw new Error('Invalid credentials');
-        }
-
-        // Check password
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isValid) {
-          throw new Error('Invalid credentials');
-        }
-
-        return {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name,
-          role: user.role
-        };
-      }
-    }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -63,19 +21,9 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt'
   },
-  pages: {
-    signIn: '/login'
-  },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.role;
-      }
-      return token;
-    },
     async session({ session, token }) {
-      if (session?.user) {
-        (session.user as any).role = token.role;
+      if (session.user) {
         (session.user as any).id = token.sub;  // Save user ID in session
       }
       return session;
@@ -115,8 +63,13 @@ export const authOptions: NextAuthOptions = {
       } catch (error) {
         console.error('Error in signIn callback:', error);
         // Still allow sign in even if database operations fail
+        // You might want to change this depending on your requirements
         return true;
       }
+    },
+    async jwt({ token, user, account }) {
+      // Add any JWT customization here if needed
+      return token;
     }
   }
 }; 

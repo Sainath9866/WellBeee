@@ -69,7 +69,11 @@ export default function MoodTracker() {
                 onChange={(e) => setOtherFactor(e.target.value)}
               />
             )}
-            <textarea placeholder="Add notes about your day . . ."className="w-full p-2 mb-4 bg-gray-700 text-white rounded-lg" rows="4"></textarea>
+            <textarea 
+              placeholder="Add notes about your day . . ." 
+              className="w-full p-2 mb-4 bg-gray-700 text-white rounded-lg" 
+              rows={4}
+            ></textarea>
             <button className="btn bg-indigo-600 text-white">Save Entry</button>
           </div>
         </div>

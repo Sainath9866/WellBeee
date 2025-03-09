@@ -5,7 +5,7 @@ import Post from '@/models/Post';
 import User from '@/models/User';
 import Notification from '@/models/Notification';
 import dbConnect from '@/app/lib/mongodb';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 export async function POST(
   request: Request,
