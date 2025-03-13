@@ -57,6 +57,15 @@ export const authOptions: NextAuthOptions = {
           access_type: "offline",
           response_type: "code"
         }
+      },
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          role: 'user'
+        }
       }
     })
   ],
@@ -80,46 +89,57 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session?.user) {
         (session.user as any).role = token.role;
-        (session.user as any).id = token.sub;  // Save user ID in session
+        (session.user as any).id = token.sub;
       }
       return session;
     },
     async signIn({ user, account, profile }) {
+      if (!user?.email) {
+        console.error('No email provided by Google');
+        return false;
+      }
+
       try {
-        // Only run database operations when using OAuth providers
         if (account?.provider === 'google') {
           await dbConnect();
           
-          // Check if this user already exists in our database
           const userExists = await User.findOne({ email: user.email });
           
           if (!userExists) {
-            // Create a new user document
             const newUser = new User({
               name: user.name,
               email: user.email,
               image: user.image,
-              provider: 'google'
+              provider: 'google',
+              role: 'user'
             });
             
-            await newUser.save();
-            console.log('New user registered:', user.email);
-          } else {
-            // Optionally update user info if changed
-            if (userExists.image !== user.image || userExists.name !== user.name) {
-              userExists.image = user.image;
-              userExists.name = user.name;
-              await userExists.save();
+            try {
+              await newUser.save();
+              console.log('New user registered:', user.email);
+            } catch (saveError) {
+              console.error('Error saving new user:', saveError);
+              return false;
             }
-            console.log('Existing user logged in:', user.email);
+          } else {
+            try {
+              if (userExists.image !== user.image || userExists.name !== user.name) {
+                userExists.image = user.image;
+                userExists.name = user.name;
+                await userExists.save();
+              }
+              console.log('Existing user logged in:', user.email);
+            } catch (updateError) {
+              console.error('Error updating user:', updateError);
+              // Still allow login even if update fails
+            }
           }
         }
         
         return true;
       } catch (error) {
         console.error('Error in signIn callback:', error);
-        // Still allow sign in even if database operations fail
-        return true;
+        return false;
       }
     }
   }

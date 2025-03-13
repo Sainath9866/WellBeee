@@ -6,20 +6,9 @@ export default function GoogleSignInButton() {
   const { data: session } = useSession();
 
   const handleGoogleSignIn = () => {
-    // Clear any existing Google session data first
-    if (window.google?.accounts?.id) {
-      window.google.accounts.id.disableAutoSelect();
-    }
-
     signIn('google', {
-      prompt: 'select_account',
       callbackUrl: '/',
-      authorization: {
-        params: {
-          prompt: 'select_account',
-          access_type: 'offline',
-        }
-      }
+      redirect: true
     });
   };
 
