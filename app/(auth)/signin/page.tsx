@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import Link from "next/link";
 import { signIn } from 'next-auth/react';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 
 export default function SignIn() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function SignIn() {
     }
   }, [session, router]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -113,7 +113,7 @@ export default function SignIn() {
               <button 
                 type="submit"
                 disabled={isLoading}
-                className="cursor-pointer btn w-full bg-linear-to-t from-indigo-600 to-indigo-500 bg-[length:100%_100%] bg-[bottom] text-white shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%] disabled:opacity-50"
+                className="cursor-pointer btn w-full bg-linear-to-t from-indigo-600 to-indigo-500 bg-[length:100%_100%] bg-[bottom] text-white shadow-[inset_0px_1px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%] disabled:opacity-50"
               >
                 {isLoading ? 'Signing in...' : 'Sign in'}
               </button>

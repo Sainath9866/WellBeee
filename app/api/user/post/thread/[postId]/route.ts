@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 
 export async function GET(
   request: Request,
-  { params }: { params: { postId: string } }
+  props: { params: Promise<{ postId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function GET(
     }
 
     await dbConnect();
-    const { postId } = params;
+    const { postId } = await props.params;
 
     // Validate postId format
     if (!mongoose.Types.ObjectId.isValid(postId)) {

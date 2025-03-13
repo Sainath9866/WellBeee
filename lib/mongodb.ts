@@ -6,17 +6,24 @@ if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
-declare global {
-  var mongoose: {
-    conn: typeof mongoose | null;
-    promise: Promise<typeof mongoose> | null;
-  } | undefined;
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
 }
 
-const cached = global.mongoose || { conn: null, promise: null };
+declare global {
+  var mongoose: MongooseCache | undefined;
+}
+
+const defaultCache: MongooseCache = {
+  conn: null,
+  promise: null
+};
+
+const cached: MongooseCache = (global.mongoose || defaultCache);
 
 if (!global.mongoose) {
-  global.mongoose = { conn: null, promise: null };
+  global.mongoose = defaultCache;
 }
 
 async function dbConnect(): Promise<typeof mongoose> {
@@ -29,7 +36,7 @@ async function dbConnect(): Promise<typeof mongoose> {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then(() => {
+    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
       return mongoose;
     });
   }

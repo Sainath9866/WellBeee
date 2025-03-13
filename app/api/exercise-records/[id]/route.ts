@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/app/lib/mongodb';
@@ -52,8 +52,8 @@ try {
 
 // GET a specific exercise record
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -65,7 +65,7 @@ export async function GET(
     }
 
     await dbConnect();
-    const { id } = params;
+    const { id } = await props.params;
 
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -107,8 +107,8 @@ export async function GET(
 
 // UPDATE a specific exercise record
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -120,7 +120,7 @@ export async function PUT(
     }
 
     await dbConnect();
-    const { id } = params;
+    const { id } = await props.params;
 
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -173,8 +173,8 @@ export async function PUT(
 
 // DELETE a specific exercise record
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -186,7 +186,7 @@ export async function DELETE(
     }
 
     await dbConnect();
-    const { id } = params;
+    const { id } = await props.params;
 
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {

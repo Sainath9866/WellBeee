@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   let session;
   try {
@@ -35,9 +35,10 @@ export async function PATCH(
   }
 
   try {
+    const { id } = await props.params;
     const data = await req.json();
     const record = await ExerciseRecord.findOneAndUpdate(
-      { _id: params.id, userId: user._id },
+      { _id: id, userId: user._id },
       { $set: data },
       { new: true }
     );
