@@ -141,6 +141,20 @@ export default function MyAppointments() {
     }
   };
 
+  // Helper function to determine if appointment time has arrived
+  const isAppointmentTime = (appointment: Appointment) => {
+    const now = new Date();
+    const appointmentDate = new Date(appointment.date);
+    const [hours, minutes] = appointment.timeSlot.start.split(':');
+    appointmentDate.setHours(parseInt(hours), parseInt(minutes));
+    
+    // Allow joining 5 minutes before the scheduled time
+    const joinWindow = new Date(appointmentDate);
+    joinWindow.setMinutes(joinWindow.getMinutes() - 5);
+    
+    return now >= joinWindow;
+  };
+
   if (!session) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -222,9 +236,15 @@ export default function MyAppointments() {
                       Join Video Call
                     </button>
                   ) : appointment.status === 'scheduled' ? (
-                    <p className="text-sm text-gray-400">
-                      The doctor will start the video call at the scheduled time.
-                    </p>
+                    isAppointmentTime(appointment) ? (
+                      <p className="text-sm text-gray-400">
+                        Waiting for the doctor to start the video call...
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-400">
+                        The video call will be available at the scheduled time.
+                      </p>
+                    )
                   ) : (
                     <p className="text-sm text-gray-400">
                       This appointment is {appointment.status}.

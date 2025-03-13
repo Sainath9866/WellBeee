@@ -149,11 +149,40 @@ export default function DoctorDashboard() {
           Authorization: `Bearer ${token}`
         }
       });
-      window.open(response.data.meetingLink, '_blank');
+
+      // Open the video call in a new window
+      const newWindow = window.open(
+        response.data.meetingLink,
+        '_blank',
+        'noopener,noreferrer,width=1200,height=800,top=50,left=50'
+      );
+
+      if (newWindow) {
+        newWindow.focus();
+      } else {
+        alert('Please allow pop-ups to open the video call window.');
+      }
+
+      // Refresh appointments to update status
+      fetchAppointments();
     } catch (error) {
       console.error('Error starting video call:', error);
       setError('Failed to start video call');
     }
+  };
+
+  // Helper function to determine if it's time for the appointment
+  const canStartCall = (appointment: Appointment) => {
+    const now = new Date();
+    const appointmentDate = new Date(appointment.date);
+    const [hours, minutes] = appointment.timeSlot.start.split(':');
+    appointmentDate.setHours(parseInt(hours), parseInt(minutes));
+    
+    // Allow starting call 5 minutes before scheduled time
+    const startWindow = new Date(appointmentDate);
+    startWindow.setMinutes(startWindow.getMinutes() - 5);
+    
+    return now >= startWindow;
   };
 
   const updateAppointmentStatus = async (appointmentId: string, status: string) => {
@@ -270,9 +299,14 @@ export default function DoctorDashboard() {
                           <>
                             <button
                               onClick={() => startVideoCall(appointment._id)}
-                              className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 transition-colors"
+                              disabled={!canStartCall(appointment)}
+                              className={`px-3 py-1 rounded transition-colors ${
+                                canStartCall(appointment)
+                                  ? 'bg-orange-500 text-white hover:bg-orange-600'
+                                  : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                              }`}
                             >
-                              Start Call
+                              {canStartCall(appointment) ? 'Start Call' : 'Too Early'}
                             </button>
                             <button
                               onClick={() => updateAppointmentStatus(appointment._id, 'cancelled')}
@@ -283,12 +317,20 @@ export default function DoctorDashboard() {
                           </>
                         )}
                         {appointment.status === 'in-progress' && (
-                          <button
-                            onClick={() => updateAppointmentStatus(appointment._id, 'completed')}
-                            className="bg-green-500/10 text-green-500 px-3 py-1 rounded hover:bg-green-500/20 transition-colors"
-                          >
-                            Complete
-                          </button>
+                          <>
+                            <button
+                              onClick={() => window.open(appointment.meetingLink, '_blank')}
+                              className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 transition-colors"
+                            >
+                              Rejoin Call
+                            </button>
+                            <button
+                              onClick={() => updateAppointmentStatus(appointment._id, 'completed')}
+                              className="bg-green-500/10 text-green-500 px-3 py-1 rounded hover:bg-green-500/20 transition-colors"
+                            >
+                              Complete
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
