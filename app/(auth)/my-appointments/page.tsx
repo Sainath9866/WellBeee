@@ -155,6 +155,40 @@ export default function MyAppointments() {
     return now >= joinWindow;
   };
 
+  // Helper function to get appointment status message
+  const getAppointmentStatusMessage = (appointment: Appointment) => {
+    if (appointment.status === 'in-progress' && appointment.meetingLink) {
+      return {
+        message: 'Video call is in progress',
+        action: 'Join Video Call',
+        color: 'text-green-400'
+      };
+    }
+
+    if (appointment.status === 'scheduled') {
+      if (!isAppointmentTime(appointment)) {
+        const appointmentDate = new Date(appointment.date);
+        const [hours, minutes] = appointment.timeSlot.start.split(':');
+        appointmentDate.setHours(parseInt(hours), parseInt(minutes));
+        
+        return {
+          message: `Video call will be available at ${appointmentDate.toLocaleTimeString()}`,
+          color: 'text-gray-400'
+        };
+      }
+      
+      return {
+        message: 'Waiting for doctor to start the video call...',
+        color: 'text-orange-400'
+      };
+    }
+
+    return {
+      message: `This appointment is ${appointment.status}`,
+      color: 'text-gray-400'
+    };
+  };
+
   if (!session) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -229,25 +263,20 @@ export default function MyAppointments() {
 
                 <div className="mt-4">
                   {appointment.status === 'in-progress' && appointment.meetingLink ? (
-                    <button
-                      onClick={() => joinMeeting(appointment.meetingLink!)}
-                      className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
-                    >
-                      Join Video Call
-                    </button>
-                  ) : appointment.status === 'scheduled' ? (
-                    isAppointmentTime(appointment) ? (
-                      <p className="text-sm text-gray-400">
-                        Waiting for the doctor to start the video call...
+                    <div className="space-y-2">
+                      <p className={getAppointmentStatusMessage(appointment).color}>
+                        {getAppointmentStatusMessage(appointment).message}
                       </p>
-                    ) : (
-                      <p className="text-sm text-gray-400">
-                        The video call will be available at the scheduled time.
-                      </p>
-                    )
+                      <button
+                        onClick={() => joinMeeting(appointment.meetingLink!)}
+                        className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors w-full sm:w-auto"
+                      >
+                        {getAppointmentStatusMessage(appointment).action}
+                      </button>
+                    </div>
                   ) : (
-                    <p className="text-sm text-gray-400">
-                      This appointment is {appointment.status}.
+                    <p className={getAppointmentStatusMessage(appointment).color}>
+                      {getAppointmentStatusMessage(appointment).message}
                     </p>
                   )}
                 </div>

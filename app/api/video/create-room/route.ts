@@ -34,7 +34,7 @@ const generateFallbackMeetingUrl = (appointmentId: string) => {
   const roomName = `appointment-${appointmentId}`;
   
   // Use Jitsi Meet as fallback (works across browsers without authentication)
-  return `https://meet.jit.si/wellbee-${roomName}#config.prejoinPageEnabled=false&config.startWithVideoMuted=false&config.startWithAudioMuted=false`;
+  return `https://meet.jit.si/wellbee-${roomName}#config.prejoinPageEnabled=false&config.startWithVideoMuted=false&config.startWithAudioMuted=false&config.disableDeepLinking=true&config.hideConferenceSubject=true&config.hideConferenceTimer=true&config.disableInviteFunctions=true`;
 };
 
 export async function POST(request: Request) {
@@ -76,7 +76,9 @@ export async function POST(request: Request) {
     }
 
     // Find appointment
-    const appointment = await Appointment.findById(appointmentId);
+    const appointment = await Appointment.findById(appointmentId)
+      .populate('doctorId', 'name email specialization');
+    
     if (!appointment) {
       return NextResponse.json(
         { error: 'Appointment not found' },
@@ -84,11 +86,27 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if the appointment is already in progress
+    if (appointment.status === 'in-progress' && appointment.meetingLink) {
+      return NextResponse.json({
+        meetingLink: appointment.meetingLink,
+        appointment
+      });
+    }
+
     // Find doctor by email
     const doctor = await Doctor.findOne({ email: userEmail });
 
-    // Check if user is authorized to create room
-    if (!doctor && appointment.patientId.toString() !== userEmail) {
+    // Only allow doctors to create/start the room
+    if (!doctor) {
+      return NextResponse.json(
+        { error: 'Only doctors can start video calls' },
+        { status: 403 }
+      );
+    }
+
+    // Verify this is the correct doctor for the appointment
+    if (appointment.doctorId._id.toString() !== doctor._id.toString()) {
       return NextResponse.json(
         { error: 'Unauthorized to create room for this appointment' },
         { status: 403 }
@@ -118,6 +136,9 @@ export async function POST(request: Request) {
               enable_recording: 'cloud',
               exp: Math.floor(expiryDate.getTime() / 1000),
               max_participants: 2,
+              enable_knocking: false,
+              start_video_off: false,
+              start_audio_off: false,
             },
           }),
         });
@@ -143,12 +164,13 @@ export async function POST(request: Request) {
       meetingLink = generateFallbackMeetingUrl(appointmentId);
     }
 
-    // Update appointment with meeting link
+    // Update appointment with meeting link and status
     const updatedAppointment = await Appointment.findByIdAndUpdate(
       appointmentId,
       {
         meetingLink,
-        status: 'in-progress'
+        status: 'in-progress',
+        lastUpdated: new Date()
       },
       { new: true }
     ).populate('doctorId', 'name specialization');

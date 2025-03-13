@@ -142,6 +142,16 @@ export default function DoctorDashboard() {
       const token = localStorage.getItem('doctorToken');
       if (!token) return;
 
+      // Show loading state
+      const appointmentElement = document.getElementById(`appointment-${appointmentId}`);
+      if (appointmentElement) {
+        const button = appointmentElement.querySelector('button');
+        if (button) {
+          button.setAttribute('disabled', 'true');
+          button.textContent = 'Starting call...';
+        }
+      }
+
       const response = await axios.post('/api/video/create-room', {
         appointmentId
       }, {
@@ -168,6 +178,16 @@ export default function DoctorDashboard() {
     } catch (error) {
       console.error('Error starting video call:', error);
       setError('Failed to start video call');
+      
+      // Reset loading state
+      const appointmentElement = document.getElementById(`appointment-${appointmentId}`);
+      if (appointmentElement) {
+        const button = appointmentElement.querySelector('button');
+        if (button) {
+          button.removeAttribute('disabled');
+          button.textContent = 'Start Call';
+        }
+      }
     }
   };
 
@@ -285,6 +305,7 @@ export default function DoctorDashboard() {
                 appointments.map((appointment) => (
                   <div
                     key={appointment._id}
+                    id={`appointment-${appointment._id}`}
                     className="bg-gray-800 rounded-xl p-6"
                   >
                     <div className="flex justify-between items-start mb-4">
