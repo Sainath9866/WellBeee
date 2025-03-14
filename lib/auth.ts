@@ -83,6 +83,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role;
+        token.id = user.id;
       }
       return token;
     },
@@ -95,17 +96,19 @@ export const authOptions: NextAuthOptions = {
     },
     async signIn({ user, account, profile }) {
       if (!user?.email) {
-        console.error('No email provided by Google');
+        console.error('No email provided');
         return false;
       }
 
       try {
-        if (account?.provider === 'google') {
-          await dbConnect();
-          
-          const userExists = await User.findOne({ email: user.email });
-          
-          if (!userExists) {
+        await dbConnect();
+        
+        // Check if user exists
+        const existingUser = await User.findOne({ email: user.email });
+        
+        if (!existingUser) {
+          // For Google sign in, create a new user
+          if (account?.provider === 'google') {
             const newUser = new User({
               name: user.name,
               email: user.email,
@@ -122,17 +125,33 @@ export const authOptions: NextAuthOptions = {
               return false;
             }
           } else {
+            // For credentials sign in, don't auto-create users
+            console.error('User not found for credentials sign in');
+            return false;
+          }
+        } else {
+          // Update existing user info if using Google
+          if (account?.provider === 'google') {
             try {
-              if (userExists.image !== user.image || userExists.name !== user.name) {
-                userExists.image = user.image;
-                userExists.name = user.name;
-                await userExists.save();
+              if (existingUser.image !== user.image || existingUser.name !== user.name) {
+                existingUser.image = user.image;
+                existingUser.name = user.name;
+                await existingUser.save();
               }
-              console.log('Existing user logged in:', user.email);
             } catch (updateError) {
               console.error('Error updating user:', updateError);
               // Still allow login even if update fails
             }
+          }
+          
+          // If user exists but trying to use different auth method
+          if (account?.provider === 'credentials' && existingUser.provider === 'google') {
+            console.error('Please sign in with Google');
+            return false;
+          }
+          if (account?.provider === 'google' && existingUser.provider === 'credentials') {
+            console.error('Please sign in with email and password');
+            return false;
           }
         }
         

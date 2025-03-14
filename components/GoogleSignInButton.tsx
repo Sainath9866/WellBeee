@@ -1,28 +1,42 @@
 'use client';
 
 import { signIn, useSession } from 'next-auth/react';
+import { useState } from 'react';
 
 export default function GoogleSignInButton() {
   const { data: session } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSignIn = () => {
-    signIn('google', {
-      callbackUrl: '/',
-      redirect: true
-    });
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsLoading(true);
+      await signIn('google', {
+        callbackUrl: '/',
+        redirect: true
+      });
+    } catch (error) {
+      console.error('Google sign in error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  if (session) return null;
+
   return (
-    <div className="flex flex-col items-center gap-4">
-      {!session && (
-        <button 
-          onClick={handleGoogleSignIn}
-          className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-white text-gray-800 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors"
-        >
-          <img src="/google.svg" alt="Google" className="w-5 h-5" />
-          Sign in with Google
-        </button>
+    <button 
+      onClick={handleGoogleSignIn}
+      disabled={isLoading}
+      className={`flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-white text-gray-800 rounded-lg border border-gray-300 transition-colors ${
+        isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+      }`}
+    >
+      {isLoading ? (
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-800 border-t-transparent" />
+      ) : (
+        <img src="/google.svg" alt="Google" className="w-5 h-5" />
       )}
-    </div>
+      {isLoading ? 'Signing in...' : 'Sign in with Google'}
+    </button>
   );
 }
