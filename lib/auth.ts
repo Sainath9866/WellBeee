@@ -8,6 +8,17 @@ import User from '@/models/User';
 declare module "next-auth" {
   interface User {
     role?: string;
+    provider?: string;
+  }
+  interface Session {
+    user: {
+      id?: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      role?: string;
+      provider?: string;
+    }
   }
 }
 
@@ -33,6 +44,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Invalid credentials');
         }
 
+        // Check if user was created with Google
+        if (user.provider === 'google') {
+          throw new Error('Please sign in with Google');
+        }
+
         // Check password
         const isValid = await bcrypt.compare(credentials.password, user.password);
 
@@ -44,7 +60,8 @@ export const authOptions: NextAuthOptions = {
           id: user._id.toString(),
           email: user.email,
           name: user.name,
-          role: user.role
+          role: user.role,
+          provider: 'credentials'
         };
       }
     }),
@@ -56,15 +73,6 @@ export const authOptions: NextAuthOptions = {
           prompt: "select_account",
           access_type: "offline",
           response_type: "code"
-        }
-      },
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
-          role: 'user'
         }
       }
     })
@@ -80,36 +88,35 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.role = user.role;
-        token.id = user.id;
+        token.provider = account?.provider || user.provider;
       }
       return token;
     },
     async session({ session, token }) {
       if (session?.user) {
-        (session.user as any).role = token.role;
-        (session.user as any).id = token.sub;
+        session.user.id = token.sub;
+        session.user.role = token.role as string;
+        session.user.provider = token.provider as string;
       }
       return session;
     },
     async signIn({ user, account, profile }) {
       if (!user?.email) {
-        console.error('No email provided');
         return false;
       }
 
       try {
         await dbConnect();
         
-        // Check if user exists
         const existingUser = await User.findOne({ email: user.email });
         
         if (!existingUser) {
-          // For Google sign in, create a new user
+          // Only allow new user creation through Google
           if (account?.provider === 'google') {
-            const newUser = new User({
+            const newUser = await User.create({
               name: user.name,
               email: user.email,
               image: user.image,
@@ -117,48 +124,36 @@ export const authOptions: NextAuthOptions = {
               role: 'user'
             });
             
-            try {
-              await newUser.save();
-              console.log('New user registered:', user.email);
-            } catch (saveError) {
-              console.error('Error saving new user:', saveError);
+            if (!newUser) {
               return false;
             }
           } else {
-            // For credentials sign in, don't auto-create users
-            console.error('User not found for credentials sign in');
             return false;
           }
         } else {
-          // Update existing user info if using Google
-          if (account?.provider === 'google') {
-            try {
-              if (existingUser.image !== user.image || existingUser.name !== user.name) {
-                existingUser.image = user.image;
-                existingUser.name = user.name;
-                await existingUser.save();
-              }
-            } catch (updateError) {
-              console.error('Error updating user:', updateError);
-              // Still allow login even if update fails
+          // Check if the user is trying to use the correct auth method
+          if (account?.provider !== existingUser.provider) {
+            if (existingUser.provider === 'google') {
+              throw new Error('Please sign in with Google');
+            } else {
+              throw new Error('Please sign in with email and password');
             }
           }
           
-          // If user exists but trying to use different auth method
-          if (account?.provider === 'credentials' && existingUser.provider === 'google') {
-            console.error('Please sign in with Google');
-            return false;
-          }
-          if (account?.provider === 'google' && existingUser.provider === 'credentials') {
-            console.error('Please sign in with email and password');
-            return false;
+          // Update Google user info if needed
+          if (account?.provider === 'google') {
+            if (existingUser.image !== user.image || existingUser.name !== user.name) {
+              existingUser.image = user.image;
+              existingUser.name = user.name;
+              await existingUser.save();
+            }
           }
         }
         
         return true;
-      } catch (error) {
-        console.error('Error in signIn callback:', error);
-        return false;
+      } catch (error: any) {
+        console.error('Sign in error:', error);
+        throw new Error(error.message || 'Authentication failed');
       }
     }
   }
