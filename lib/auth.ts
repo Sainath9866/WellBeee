@@ -121,7 +121,8 @@ export const authOptions: NextAuthOptions = {
               email: user.email,
               image: user.image,
               provider: 'google',
-              role: 'user'
+              role: 'user',
+              password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10) // Generate random password for Google users
             });
             
             if (!newUser) {

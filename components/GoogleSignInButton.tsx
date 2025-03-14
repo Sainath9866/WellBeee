@@ -8,7 +8,7 @@ export default function GoogleSignInButton() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
   const handleGoogleSignIn = async () => {
     try {
@@ -31,12 +31,12 @@ export default function GoogleSignInButton() {
     <button 
       onClick={handleGoogleSignIn}
       disabled={isLoading}
-      className={`flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-white text-gray-800 rounded-lg border border-gray-300 transition-colors ${
-        isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+      className={`flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-gray-800 text-white rounded-lg border border-gray-700 transition-colors ${
+        isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-700'
       }`}
     >
       {isLoading ? (
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-800 border-t-transparent" />
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
       ) : (
         <img src="/google.svg" alt="Google" className="w-5 h-5" />
       )}
