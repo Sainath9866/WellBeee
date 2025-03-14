@@ -17,7 +17,7 @@ function SignInForm() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/');
+      router.push('/dashboard');
     }
 
     const error = searchParams.get('error');
@@ -26,6 +26,10 @@ function SignInForm() {
         setError('Please sign in with the correct method');
       } else if (error.includes('password')) {
         setError('Please use Google Sign In for a smoother experience');
+      } else if (error.includes('Please sign in with Google')) {
+        setError('This email is registered with Google. Please use the Google Sign In button below.');
+      } else if (error.includes('Please sign in with email')) {
+        setError('This email is registered with email/password. Please sign in with your email and password.');
       } else {
         setError('An error occurred during sign in');
       }
@@ -45,9 +49,15 @@ function SignInForm() {
       });
 
       if (result?.error) {
-        setError(result.error);
+        if (result.error.includes('Please sign in with Google')) {
+          setError('This email is registered with Google. Please use the Google Sign In button below.');
+        } else if (result.error.includes('Invalid credentials')) {
+          setError('Invalid email or password');
+        } else {
+          setError(result.error);
+        }
       } else {
-        router.push('/');
+        router.push('/dashboard');
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');
@@ -124,7 +134,7 @@ function SignInForm() {
                   </svg>
                 </span>
               ) : null}
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Signing in...' : 'Sign in with Email'}
             </button>
           </div>
         </form>

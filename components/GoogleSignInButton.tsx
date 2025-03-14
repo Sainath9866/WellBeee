@@ -8,7 +8,7 @@ export default function GoogleSignInButton() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
   const handleGoogleSignIn = async () => {
     try {
@@ -38,7 +38,7 @@ export default function GoogleSignInButton() {
       {isLoading ? (
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
       ) : (
-        <img src="/google.svg" alt="Google" className="w-5 h-5" />
+        <img src="/google.svg" alt="Google" className="w-5 h-5 filter invert" />
       )}
       {isLoading ? 'Signing in...' : 'Sign in with Google'}
     </button>

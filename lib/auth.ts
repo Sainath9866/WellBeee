@@ -114,7 +114,7 @@ export const authOptions: NextAuthOptions = {
         const existingUser = await User.findOne({ email: user.email });
         
         if (!existingUser) {
-          // Only allow new user creation through Google
+          // Create new user with Google
           if (account?.provider === 'google') {
             const newUser = await User.create({
               name: user.name,
@@ -122,31 +122,31 @@ export const authOptions: NextAuthOptions = {
               image: user.image,
               provider: 'google',
               role: 'user',
-              password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10) // Generate random password for Google users
+              password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10)
             });
             
             if (!newUser) {
-              return false;
+              throw new Error('Failed to create user');
             }
           } else {
             return false;
           }
         } else {
-          // Check if the user is trying to use the correct auth method
-          if (account?.provider !== existingUser.provider) {
-            if (existingUser.provider === 'google') {
-              throw new Error('Please sign in with Google');
-            } else {
+          // Allow Google users to sign in with Google
+          if (account?.provider === 'google') {
+            if (existingUser.provider !== 'google') {
               throw new Error('Please sign in with email and password');
             }
-          }
-          
-          // Update Google user info if needed
-          if (account?.provider === 'google') {
+            // Update user info if needed
             if (existingUser.image !== user.image || existingUser.name !== user.name) {
               existingUser.image = user.image;
               existingUser.name = user.name;
               await existingUser.save();
+            }
+          } else {
+            // For credentials login, ensure user exists and is not a Google user
+            if (existingUser.provider === 'google') {
+              throw new Error('Please sign in with Google');
             }
           }
         }
