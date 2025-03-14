@@ -17,7 +17,7 @@ function SignInForm() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/dashboard');
+      router.push('/');
     }
 
     const error = searchParams.get('error');
@@ -47,7 +47,7 @@ function SignInForm() {
       if (result?.error) {
         setError(result.error);
       } else {
-        router.push('/dashboard');
+        router.push('/');
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');

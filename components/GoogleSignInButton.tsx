@@ -8,7 +8,7 @@ export default function GoogleSignInButton() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   const handleGoogleSignIn = async () => {
     try {

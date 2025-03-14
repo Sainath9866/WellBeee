@@ -1,5 +1,5 @@
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard' },
+  { name: 'Home', href: '/' },
   { name: 'Fitness Tracker', href: '/fitness-tracker' },
   { name: 'Journal', href: '/journal' },
   { name: 'Medical Assistance', href: '/medical-assistance' },
