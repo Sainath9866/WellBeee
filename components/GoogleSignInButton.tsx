@@ -8,15 +8,14 @@ export default function GoogleSignInButton() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      await signIn('google', {
+      const result = await signIn('google', {
         callbackUrl,
-        redirect: true,
-        prompt: 'select_account'
+        redirect: true
       });
     } catch (error) {
       console.error('Google sign in error:', error);

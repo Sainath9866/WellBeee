@@ -70,9 +70,7 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          prompt: "select_account",
-          access_type: "offline",
-          response_type: "code"
+          prompt: "select_account"
         }
       }
     })
@@ -111,50 +109,52 @@ export const authOptions: NextAuthOptions = {
       try {
         await dbConnect();
         
-        const existingUser = await User.findOne({ email: user.email });
+        let existingUser = await User.findOne({ email: user.email });
         
         if (!existingUser) {
-          // Create new user with Google
+          // Create new user
+          const userData = {
+            name: user.name,
+            email: user.email,
+            role: 'user'
+          };
+
           if (account?.provider === 'google') {
-            const newUser = await User.create({
-              name: user.name,
-              email: user.email,
+            Object.assign(userData, {
               image: user.image,
               provider: 'google',
-              role: 'user',
               password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10)
             });
-            
-            if (!newUser) {
-              throw new Error('Failed to create user');
-            }
           } else {
-            return false;
+            Object.assign(userData, {
+              provider: 'credentials'
+            });
           }
-        } else {
-          // Allow Google users to sign in with Google
-          if (account?.provider === 'google') {
-            if (existingUser.provider !== 'google') {
-              throw new Error('Please sign in with email and password');
-            }
-            // Update user info if needed
-            if (existingUser.image !== user.image || existingUser.name !== user.name) {
-              existingUser.image = user.image;
-              existingUser.name = user.name;
-              await existingUser.save();
-            }
-          } else {
-            // For credentials login, ensure user exists and is not a Google user
-            if (existingUser.provider === 'google') {
-              throw new Error('Please sign in with Google');
-            }
+
+          existingUser = await User.create(userData);
+          
+          if (!existingUser) {
+            throw new Error('Failed to create user');
+          }
+        }
+        
+        // For Google sign in
+        if (account?.provider === 'google') {
+          // Update user info if needed
+          const updates: any = {};
+          if (existingUser.image !== user.image) updates.image = user.image;
+          if (existingUser.name !== user.name) updates.name = user.name;
+          
+          if (Object.keys(updates).length > 0) {
+            Object.assign(existingUser, updates);
+            await existingUser.save();
           }
         }
         
         return true;
       } catch (error: any) {
         console.error('Sign in error:', error);
-        throw new Error(error.message || 'Authentication failed');
+        return false; // Return false instead of throwing to prevent redirect loops
       }
     }
   }

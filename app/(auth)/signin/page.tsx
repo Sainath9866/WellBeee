@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 
 function SignInForm() {
   const [email, setEmail] = useState('');
@@ -17,9 +18,12 @@ function SignInForm() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/dashboard');
+      router.push('/');
+      router.refresh();
     }
+  }, [status, router]);
 
+  useEffect(() => {
     const error = searchParams.get('error');
     if (error) {
       if (error === 'AccessDenied') {
@@ -34,7 +38,7 @@ function SignInForm() {
         setError('An error occurred during sign in');
       }
     }
-  }, [status, router, searchParams]);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +49,8 @@ function SignInForm() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false
+        redirect: false,
+        callbackUrl: '/'
       });
 
       if (result?.error) {
@@ -56,8 +61,9 @@ function SignInForm() {
         } else {
           setError(result.error);
         }
-      } else {
-        router.push('/dashboard');
+      } else if (result?.url) {
+        router.push(result.url);
+        router.refresh();
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');
@@ -152,6 +158,15 @@ function SignInForm() {
           <div className="mt-6">
             <GoogleSignInButton />
           </div>
+        </div>
+
+        <div className="mt-4 text-center">
+          <Link 
+            href="/signup" 
+            className="text-sm text-blue-400 hover:text-blue-500"
+          >
+            Don't have an account? Sign up
+          </Link>
         </div>
       </div>
     </div>
