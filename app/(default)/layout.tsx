@@ -27,7 +27,7 @@ export default function DefaultLayout({
     <>
       <AuthProvider>
         <main className="relative flex grow flex-col">{children}</main>
-        <Footer />
+       
       </AuthProvider>
     </>
   );

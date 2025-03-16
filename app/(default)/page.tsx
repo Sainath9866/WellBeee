@@ -16,10 +16,6 @@ export const metadata = {
       <>
         <PageIllustration />
         <Hero />
-        <Workflows />
-        <Features />
-        <Testimonials />
-        <Cta />
       </>
     );
   }
