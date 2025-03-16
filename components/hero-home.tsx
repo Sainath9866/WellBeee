@@ -1,7 +1,22 @@
+"use client";
+
 import VideoThumb from "@/public/images/hero-image-01.jpg";
 import ModalVideo from "@/components/modal-video";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function HeroHome() {
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const handleGetStarted = () => {
+    if (session) {
+      router.push('/conversation');
+    } else {
+      router.push('/signin');
+    }
+  };
+
   return (
     <section>
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -25,17 +40,17 @@ export default function HeroHome() {
               </p>
               <div className="mx-auto max-w-xs sm:flex sm:max-w-none sm:justify-center">
                 <div data-aos="fade-up" data-aos-delay={400}>
-                  <a
+                  <button
+                    onClick={handleGetStarted}
                     className="btn group mb-4 w-full bg-linear-to-t from-indigo-600 to-indigo-500 bg-[length:100%_100%] bg-[bottom] text-white shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%] sm:mb-0 sm:w-auto"
-                    href="#0"
                   >
-                    <span className="relative inline-flex items-center">
+                    <span className="cursor-pointer relative inline-flex items-center">
                       Get Started
                       <span className="ml-1 tracking-normal text-white/50 transition-transform group-hover:translate-x-0.5">
                         -&gt;
                       </span>
                     </span>
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
